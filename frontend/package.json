@@ -1,0 +1,37 @@
+{
+  "name": "netcharge-pro-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": ["wifi", "billing", "nextjs", "dashboard"],
+  "author": "NetCharge Pro Team",
+  "license": "MIT",
+  "description": "NetCharge Pro WiFi Billing System - Frontend Dashboard",
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@tanstack/react-query": "^5.90.11",
+    "axios": "^1.13.2",
+    "date-fns": "^3.6.0",
+    "lucide-react": "^0.456.0",
+    "next": "^14.2.33",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.67.0",
+    "zod": "^3.25.76",
+    "zustand": "^4.5.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.25",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "typescript": "^5.9.3"
+  }
+}
