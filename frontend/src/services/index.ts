@@ -120,3 +120,23 @@ export const paymentService = {
     return response.data;
   },
 };
+
+// Analytics services
+export const analyticsService = {
+  getRevenue: async (period: '7days' | '30days' | '12months' = '30days') => {
+    const response = await api.get('/api/analytics/revenue', { params: { period } });
+    return response.data;
+  },
+  getCustomerGrowth: async (period: '7days' | '30days' | '12months' = '30days') => {
+    const response = await api.get('/api/analytics/customers', { params: { period } });
+    return response.data;
+  },
+  getPaymentStats: async () => {
+    const response = await api.get('/api/analytics/payments');
+    return response.data;
+  },
+  getSummary: async () => {
+    const response = await api.get('/api/analytics/summary');
+    return response.data;
+  },
+};

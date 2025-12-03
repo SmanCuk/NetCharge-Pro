@@ -4,27 +4,55 @@ import { useEffect, useState } from 'react';
 import { Users, FileText, CreditCard, AlertTriangle } from 'lucide-react';
 import { StatCard, Card } from '@/components/ui/Card';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
-import { invoiceService, customerService, paymentService } from '@/services';
+import { Select } from '@/components/ui/Select';
+import { invoiceService, customerService, analyticsService } from '@/services';
 import type { DashboardStats, Invoice, Customer } from '@/types';
 import { format } from 'date-fns';
+import DashboardSummary from '@/components/dashboard/DashboardSummary';
+import RevenueChart from '@/components/dashboard/RevenueChart';
+import CustomerGrowthChart from '@/components/dashboard/CustomerGrowthChart';
+import PaymentStats from '@/components/dashboard/PaymentStats';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
   const [activeCustomers, setActiveCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Analytics state
+  const [summary, setSummary] = useState<any>(null);
+  const [revenueData, setRevenueData] = useState<any>(null);
+  const [customerGrowthData, setCustomerGrowthData] = useState<any>(null);
+  const [paymentStatsData, setPaymentStatsData] = useState<any>(null);
+  const [period, setPeriod] = useState<'7days' | '30days' | '12months'>('30days');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsData, invoicesData, customersData] = await Promise.all([
+        const [
+          statsData, 
+          invoicesData, 
+          customersData,
+          summaryData,
+          revenueRes,
+          customerGrowthRes,
+          paymentStatsRes
+        ] = await Promise.all([
           invoiceService.getDashboardStats(),
           invoiceService.getAll(),
           customerService.getAll('active'),
+          analyticsService.getSummary(),
+          analyticsService.getRevenue(period),
+          analyticsService.getCustomerGrowth(period),
+          analyticsService.getPaymentStats(),
         ]);
         setStats(statsData);
         setRecentInvoices(invoicesData.slice(0, 5));
         setActiveCustomers(customersData);
+        setSummary(summaryData);
+        setRevenueData(revenueRes);
+        setCustomerGrowthData(customerGrowthRes);
+        setPaymentStatsData(paymentStatsRes);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -33,7 +61,7 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, []);
+  }, [period]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -53,12 +81,47 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500">Overview of your WiFi billing system</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-500">Overview of your WiFi billing system</p>
+        </div>
+        <Select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as any)}
+          options={[
+            { value: '7days', label: 'Last 7 Days' },
+            { value: '30days', label: 'Last 30 Days' },
+            { value: '12months', label: 'Last 12 Months' },
+          ]}
+        />
       </div>
 
-      {/* Stats Grid */}
+      {/* Summary Cards */}
+      {summary && <DashboardSummary data={summary} />}
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {revenueData && (
+          <RevenueChart 
+            data={revenueData.data} 
+            total={revenueData.total} 
+            period={period}
+          />
+        )}
+        {customerGrowthData && (
+          <CustomerGrowthChart 
+            data={customerGrowthData.data} 
+            totalNew={customerGrowthData.totalNew} 
+            period={period}
+          />
+        )}
+      </div>
+
+      {/* Payment Statistics */}
+      {paymentStatsData && <PaymentStats data={paymentStatsData} />}
+
+      {/* Stats Grid - Legacy */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Active Customers"

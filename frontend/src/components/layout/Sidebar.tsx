@@ -49,7 +49,7 @@ export default function Sidebar() {
           {/* Logo */}
           <div className="flex items-center gap-2 px-6 py-5 border-b">
             <Wifi className="h-8 w-8 text-primary-600" />
-            <span className="text-xl font-bold text-gray-900">RIO NET PIAYU</span>
+            <span className="text-xl font-bold text-gray-900">SUKA-SUKA PIAYU NET</span>
           </div>
 
           {/* Navigation */}
