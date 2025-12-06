@@ -183,4 +183,106 @@ export class AnalyticsService {
 
     return { startDate, groupBy };
   }
+
+  async getTopCustomers(limit: number = 5) {
+    const customers = await this.invoiceRepository
+      .createQueryBuilder('invoice')
+      .select('invoice.customerId', 'customerId')
+      .addSelect('customer.name', 'customerName')
+      .addSelect('customer.email', 'customerEmail')
+      .addSelect('SUM(invoice.amount)', 'totalRevenue')
+      .addSelect('COUNT(invoice.id)', 'invoiceCount')
+      .innerJoin('invoice.customer', 'customer')
+      .where('invoice.status = :status', { status: InvoiceStatus.PAID })
+      .groupBy('invoice.customerId')
+      .addGroupBy('customer.name')
+      .addGroupBy('customer.email')
+      .orderBy('totalRevenue', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return customers.map(c => ({
+      customerId: c.customerId,
+      customerName: c.customerName,
+      customerEmail: c.customerEmail,
+      totalRevenue: parseFloat(c.totalRevenue),
+      invoiceCount: parseInt(c.invoiceCount),
+    }));
+  }
+
+  async getRecentActivities(limit: number = 10) {
+    const [recentPayments, recentInvoices] = await Promise.all([
+      this.paymentRepository
+        .createQueryBuilder('payment')
+        .leftJoinAndSelect('payment.invoice', 'invoice')
+        .leftJoinAndSelect('invoice.customer', 'customer')
+        .orderBy('payment.createdAt', 'DESC')
+        .limit(limit)
+        .getMany(),
+      this.invoiceRepository
+        .createQueryBuilder('invoice')
+        .leftJoinAndSelect('invoice.customer', 'customer')
+        .where('invoice.createdAt >= :date', { 
+          date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) 
+        })
+        .orderBy('invoice.createdAt', 'DESC')
+        .limit(limit)
+        .getMany(),
+    ]);
+
+    const activities = [
+      ...recentPayments.map(p => ({
+        id: p.id,
+        type: 'payment' as const,
+        title: `Payment received from ${p.invoice?.customer?.name || 'Unknown'}`,
+        amount: p.amount,
+        date: p.createdAt,
+        status: p.status,
+        customerName: p.invoice?.customer?.name,
+      })),
+      ...recentInvoices.map(i => ({
+        id: i.id,
+        type: 'invoice' as const,
+        title: `Invoice ${i.invoiceNumber} created for ${i.customer?.name || 'Unknown'}`,
+        amount: i.amount,
+        date: i.createdAt,
+        status: i.status,
+        customerName: i.customer?.name,
+      })),
+    ];
+
+    return activities
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, limit);
+  }
+
+  async getStatusDistribution() {
+    const [customersByStatus, invoicesByStatus] = await Promise.all([
+      this.customerRepository
+        .createQueryBuilder('customer')
+        .select('customer.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('customer.status')
+        .getRawMany(),
+      this.invoiceRepository
+        .createQueryBuilder('invoice')
+        .select('invoice.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .addSelect('SUM(invoice.amount)', 'total')
+        .groupBy('invoice.status')
+        .getRawMany(),
+    ]);
+
+    return {
+      customers: customersByStatus.map(c => ({
+        status: c.status,
+        count: parseInt(c.count),
+      })),
+      invoices: invoicesByStatus.map(i => ({
+        status: i.status,
+        count: parseInt(i.count),
+        total: parseFloat(i.total) || 0,
+      })),
+    };
+  }
 }

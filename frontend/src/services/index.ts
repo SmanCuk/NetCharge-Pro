@@ -139,4 +139,16 @@ export const analyticsService = {
     const response = await api.get('/api/analytics/summary');
     return response.data;
   },
+  getTopCustomers: async (limit: number = 5) => {
+    const response = await api.get('/api/analytics/top-customers', { params: { limit } });
+    return response.data;
+  },
+  getRecentActivities: async (limit: number = 10) => {
+    const response = await api.get('/api/analytics/recent-activities', { params: { limit } });
+    return response.data;
+  },
+  getStatusDistribution: async () => {
+    const response = await api.get('/api/analytics/status-distribution');
+    return response.data;
+  },
 };

@@ -35,4 +35,24 @@ export class AnalyticsController {
   async getSummary() {
     return this.analyticsService.getDashboardSummary();
   }
+
+  @Get('top-customers')
+  @ApiOperation({ summary: 'Get top customers by revenue' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getTopCustomers(@Query('limit') limit?: number) {
+    return this.analyticsService.getTopCustomers(limit ? parseInt(String(limit)) : 5);
+  }
+
+  @Get('recent-activities')
+  @ApiOperation({ summary: 'Get recent activities (invoices & payments)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getRecentActivities(@Query('limit') limit?: number) {
+    return this.analyticsService.getRecentActivities(limit ? parseInt(String(limit)) : 10);
+  }
+
+  @Get('status-distribution')
+  @ApiOperation({ summary: 'Get status distribution for customers and invoices' })
+  async getStatusDistribution() {
+    return this.analyticsService.getStatusDistribution();
+  }
 }

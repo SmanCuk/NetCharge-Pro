@@ -12,6 +12,10 @@ import DashboardSummary from '@/components/dashboard/DashboardSummary';
 import RevenueChart from '@/components/dashboard/RevenueChart';
 import CustomerGrowthChart from '@/components/dashboard/CustomerGrowthChart';
 import PaymentStats from '@/components/dashboard/PaymentStats';
+import TopCustomers from '@/components/dashboard/TopCustomers';
+import RecentActivity from '@/components/dashboard/RecentActivity';
+import QuickActions from '@/components/dashboard/QuickActions';
+import StatusDistribution from '@/components/dashboard/StatusDistribution';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -24,6 +28,9 @@ export default function DashboardPage() {
   const [revenueData, setRevenueData] = useState<any>(null);
   const [customerGrowthData, setCustomerGrowthData] = useState<any>(null);
   const [paymentStatsData, setPaymentStatsData] = useState<any>(null);
+  const [topCustomers, setTopCustomers] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [statusDistribution, setStatusDistribution] = useState<any>(null);
   const [period, setPeriod] = useState<'7days' | '30days' | '12months'>('30days');
 
   useEffect(() => {
@@ -36,7 +43,10 @@ export default function DashboardPage() {
           summaryData,
           revenueRes,
           customerGrowthRes,
-          paymentStatsRes
+          paymentStatsRes,
+          topCustomersRes,
+          recentActivitiesRes,
+          statusDistributionRes,
         ] = await Promise.all([
           invoiceService.getDashboardStats(),
           invoiceService.getAll(),
@@ -45,6 +55,9 @@ export default function DashboardPage() {
           analyticsService.getRevenue(period),
           analyticsService.getCustomerGrowth(period),
           analyticsService.getPaymentStats(),
+          analyticsService.getTopCustomers(5),
+          analyticsService.getRecentActivities(10),
+          analyticsService.getStatusDistribution(),
         ]);
         setStats(statsData);
         setRecentInvoices(invoicesData.slice(0, 5));
@@ -53,6 +66,9 @@ export default function DashboardPage() {
         setRevenueData(revenueRes);
         setCustomerGrowthData(customerGrowthRes);
         setPaymentStatsData(paymentStatsRes);
+        setTopCustomers(topCustomersRes);
+        setRecentActivities(recentActivitiesRes);
+        setStatusDistribution(statusDistributionRes);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -100,26 +116,54 @@ export default function DashboardPage() {
       {/* Summary Cards */}
       {summary && <DashboardSummary data={summary} />}
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {revenueData && (
-          <RevenueChart 
-            data={revenueData.data} 
-            total={revenueData.total} 
-            period={period}
-          />
-        )}
-        {customerGrowthData && (
-          <CustomerGrowthChart 
-            data={customerGrowthData.data} 
-            totalNew={customerGrowthData.totalNew} 
-            period={period}
-          />
-        )}
+      {/* Quick Actions */}
+      <QuickActions />
+
+      {/* Charts and Top Customers Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Charts (2 columns on large screens) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {revenueData && (
+              <RevenueChart 
+                data={revenueData.data} 
+                total={revenueData.total} 
+                period={period}
+              />
+            )}
+            {customerGrowthData && (
+              <CustomerGrowthChart 
+                data={customerGrowthData.data} 
+                totalNew={customerGrowthData.totalNew} 
+                period={period}
+              />
+            )}
+          </div>
+          
+          {/* Payment Statistics */}
+          {paymentStatsData && <PaymentStats data={paymentStatsData} />}
+          
+          {/* Recent Activity */}
+          {recentActivities && recentActivities.length > 0 && (
+            <RecentActivity activities={recentActivities} />
+          )}
+        </div>
+
+        {/* Right Column - Top Customers */}
+        <div className="space-y-6">
+          {topCustomers && topCustomers.length > 0 && (
+            <TopCustomers customers={topCustomers} />
+          )}
+        </div>
       </div>
 
-      {/* Payment Statistics */}
-      {paymentStatsData && <PaymentStats data={paymentStatsData} />}
+      {/* Status Distribution - Full Width */}
+      {statusDistribution && (
+        <StatusDistribution 
+          customerStatus={statusDistribution.customerStatus}
+          invoiceStatus={statusDistribution.invoiceStatus}
+        />
+      )}
 
       {/* Stats Grid - Legacy */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
