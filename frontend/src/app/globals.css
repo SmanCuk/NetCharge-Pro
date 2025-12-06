@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* React DatePicker Styles */
+@import 'react-datepicker/dist/react-datepicker.css';
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -41,5 +44,37 @@ body {
 
   .stat-card {
     @apply bg-white rounded-xl shadow-md p-6 flex flex-col;
+  }
+
+  /* Custom React DatePicker styling */
+  .react-datepicker-wrapper {
+    @apply w-full;
+  }
+
+  .react-datepicker__input-container input {
+    @apply w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500;
+  }
+
+  .react-datepicker {
+    @apply font-sans border border-gray-300 rounded-lg shadow-lg;
+  }
+
+  .react-datepicker__header {
+    @apply bg-primary-600 border-b-0 rounded-t-lg;
+  }
+
+  .react-datepicker__current-month,
+  .react-datepicker-time__header,
+  .react-datepicker__day-name {
+    @apply text-white;
+  }
+
+  .react-datepicker__day--selected,
+  .react-datepicker__day--keyboard-selected {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+
+  .react-datepicker__day:hover {
+    @apply bg-primary-100;
   }
 }

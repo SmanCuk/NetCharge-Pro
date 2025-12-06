@@ -55,4 +55,10 @@ export class AnalyticsController {
   async getStatusDistribution() {
     return this.analyticsService.getStatusDistribution();
   }
+
+  @Get('trends')
+  @ApiOperation({ summary: 'Get trend comparison with previous period' })
+  async getTrends() {
+    return this.analyticsService.getTrendComparison();
+  }
 }

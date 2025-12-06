@@ -151,4 +151,8 @@ export const analyticsService = {
     const response = await api.get('/api/analytics/status-distribution');
     return response.data;
   },
+  getTrends: async () => {
+    const response = await api.get('/api/analytics/trends');
+    return response.data;
+  },
 };

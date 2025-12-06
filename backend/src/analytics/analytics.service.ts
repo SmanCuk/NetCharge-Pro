@@ -285,4 +285,81 @@ export class AnalyticsService {
       })),
     };
   }
+
+  async getTrendComparison() {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    // Current period (last 30 days)
+    const [currentCustomers, currentInvoices, currentRevenue] = await Promise.all([
+      this.customerRepository.count({
+        where: { createdAt: MoreThanOrEqual(thirtyDaysAgo) },
+      }),
+      this.invoiceRepository.count({
+        where: { createdAt: MoreThanOrEqual(thirtyDaysAgo) },
+      }),
+      this.paymentRepository
+        .createQueryBuilder('payment')
+        .select('SUM(payment.amount)', 'total')
+        .where('payment.createdAt >= :startDate', { startDate: thirtyDaysAgo })
+        .getRawOne()
+        .then(r => parseFloat(r?.total) || 0),
+    ]);
+
+    // Previous period (30-60 days ago)
+    const [previousCustomers, previousInvoices, previousRevenue] = await Promise.all([
+      this.customerRepository.count({
+        where: { 
+          createdAt: MoreThanOrEqual(sixtyDaysAgo),
+        },
+      }).then(total => total - currentCustomers),
+      this.invoiceRepository.count({
+        where: { 
+          createdAt: MoreThanOrEqual(sixtyDaysAgo),
+        },
+      }).then(total => total - currentInvoices),
+      this.paymentRepository
+        .createQueryBuilder('payment')
+        .select('SUM(payment.amount)', 'total')
+        .where('payment.createdAt >= :startDate', { startDate: sixtyDaysAgo })
+        .andWhere('payment.createdAt < :endDate', { endDate: thirtyDaysAgo })
+        .getRawOne()
+        .then(r => parseFloat(r?.total) || 0),
+    ]);
+
+    // Calculate percentage changes
+    const calculateChange = (current: number, previous: number): number => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    // This month vs last month revenue
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const [thisMonthRevenue, lastMonthRevenue] = await Promise.all([
+      this.paymentRepository
+        .createQueryBuilder('payment')
+        .select('SUM(payment.amount)', 'total')
+        .where('payment.createdAt >= :startDate', { startDate: startOfThisMonth })
+        .getRawOne()
+        .then(r => parseFloat(r?.total) || 0),
+      this.paymentRepository
+        .createQueryBuilder('payment')
+        .select('SUM(payment.amount)', 'total')
+        .where('payment.createdAt >= :startDate', { startDate: startOfLastMonth })
+        .andWhere('payment.createdAt <= :endDate', { endDate: endOfLastMonth })
+        .getRawOne()
+        .then(r => parseFloat(r?.total) || 0),
+    ]);
+
+    return {
+      customers: calculateChange(currentCustomers, previousCustomers),
+      invoices: calculateChange(currentInvoices, previousInvoices),
+      revenue: calculateChange(currentRevenue, previousRevenue),
+      thisMonth: calculateChange(thisMonthRevenue, lastMonthRevenue),
+    };
+  }
 }
